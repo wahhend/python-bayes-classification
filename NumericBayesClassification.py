@@ -1,5 +1,5 @@
 import math
-import numpy as np
+
 
 class Object:
     name = ""
@@ -16,6 +16,7 @@ def mean(objects, selectedClass):
             numOfElement = numOfElement+1
     return sum/numOfElement
 
+
 def variance(objects, selectedClass):
     valuesOfFeature = []
     for object in objects:
@@ -24,20 +25,24 @@ def variance(objects, selectedClass):
 
     m = sum(valuesOfFeature)/len(valuesOfFeature)
 
-    return sum((xi - m) ** 2 for xi in valuesOfFeature) / len(valuesOfFeature)
+    return sum((xi - m) ** 2 for xi in valuesOfFeature) / (len(valuesOfFeature)-1)
+
 
 def likelihood(objects, selectedClass, value):
     var = variance(objects, selectedClass)
     m = mean(objects, selectedClass)
     return 1 / ((2 * math.pi * var) ** 0.5) \
-           * math.exp(-((value - m) ** 2 / 2 * var))
+           * math.exp(-((value - m) ** 2 / (2 * var)))
+
 
 def prior(objects, selectedClass):
     className = [object.name for object in objects]
     return (className.count(selectedClass)/len(objects))
 
+
 def posterior(objects, selectedClass, value):
     return likelihood(objects, selectedClass, value) * prior(objects, selectedClass)
+
 
 def decision(objects, value):
     classes = set([object.name for object in objects])
@@ -46,6 +51,7 @@ def decision(objects, value):
     for className in classes:
         results.append(posterior(objects, className, value))
     return classes[results.index(max(results))]
+
 
 creatures = []
 

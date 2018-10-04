@@ -1,172 +1,80 @@
-import numpy as np
-
-luas = np.array([9,10,15,30,16,25,9,8,10,14])
-masak = np.array(["kayu bakar","gas lpg","gas lpg","gas lpg","kompor listrik",
-"gas lpg","gas lpg","kayu bakar","kayu bakar", "gas lpg","kayu bakar"])
-lantai = np.array(["ubin","ubin","plester","ubin","ubin",
-"ubin","plester", "tanah", "tanah", "tanah"])
-
-kategori = np.array(["sedang", "sedang", "sedang",
-"kaya", "kaya", "kaya",
-"miskin", "miskin", "miskin", "miskin"])
-
-ikan = ["lele", "lele", "lele", "lele", "lele", "lele", "lele",
-"patin", "patin", "patin"]
-
-kumis = ["panjang", "panjang", "panjang", "panjang", "panjang",
-"pendek", "pendek", "pendek", "pendek", "pendek",]
-
-daging = np.array([3,2,2,4,3,5,0.5,1,2,1])
-# print(daging)
+import math
 
 
-def naiveBayes(array,x,bahan,ubin,daging,fishName):
-    hasil = likelihoodNumerik(x,array,fishName,"luas") * likelihood(array, fishName, bahan) * likelihood(array, fishName, ubin) \
-            * likelihoodNumerik(daging,array,fishName,"daging") * prior(array,fishName)/ evidence(array,x)
-    return hasil
+class Data:
+    def __init__(self, discreteFeature, numericFeature, classification):
+        self.classification = classification
+        self.discreteFeatures = discreteFeature
+        self.numericFeatures = numericFeature
 
 
-def varians(data):
-    hasil = np.var(data,ddof=1)
-    return hasil
+def prior(objects, selectedClass):
+    className = [object.classification for object in objects]
+    return className.count(selectedClass)/len(objects)
+
+
+def likelihood(objects, selectedClass, values):
+    likely = 1
+    classCount = [object.classification for object in objects].count(selectedClass)
+
+    for i in range(0, len(values)):
+        count = 0
+        for object in objects:
+            if object.classification == selectedClass and object.discreteFeatures[i] == values[i]:
+                count += 1
+
+        likely *= (count / classCount)
+
+    return likely
+
 
 def mean(data):
-    hasil = np.mean(data)
-    return hasil
-
-def likelihoodNumerik(x, array, fishName, feature):
-    temp = np.array([])
-    for fish in array:
-        if (fish.name == fishName):
-            if(feature=="luas"):
-                temp = np.append(temp,fish.ukuran)
-            else:
-                temp = np.append(temp,fish.daging)
-
-    rerata = mean(temp)
-    var = varians(temp)
-    hasil = 1/np.sqrt(2*np.pi*var) * np.exp(-(pow(x-rerata,2))/2*var)
-
-    return hasil
-
-def posterior(feature, fishName, array):
-    return (likelihood(array, fishName, feature)*prior(array, fishName))/evidence(array, feature)
-
-def prior(array, priorData):
-    name = [i.name for i in array]
-    count = name.count(priorData)
-    count /= len(array)
-    return count
-
-def likelihood(array, fishName, feature):
-    count = 0
-
-    for fish in array:
-        if(fish.name == fishName and (fish.kumis == feature or fish.lantai == feature)):
-            count += 1
-
-    name = [i.name for i in array]
-    name = name.count(fishName)
-
-    count /= name
-    return count
-
-def evidence (array, featureData):
-    name = [i.kumis for i in array]
-    count = name.count(featureData)
-    count /= len(array)
-    return count
+    return sum(data) / len(data)
 
 
-class Fish:
-    name = ""
-    kumis = ""
-    ukuran = ""
-    lantai = ""
-    daging = ""
-
-#coba = mean(luas[0:3])
+def variance(data):
+    m = mean(data)
+    return sum((xi - m) ** 2 for xi in data) / (len(data)-1)
 
 
-#print(likelihood(12,luas[0:3]))
-fish = [Fish()] * 10
+def numericLikelihood(objects, selectedClass, values):
+    likely = 1
+    # classCount = [object.classification for object in objects].count(selectedClass)
+    filteredObjects = [object for object in objects if object.classification == selectedClass]
 
-for i in range (0,9):
-    fish[i] = Fish()
+    for i in range(0, len(values)):
+        var = variance([object.numericFeatures[i] for object in filteredObjects])
+        m = mean([object.numericFeatures[i] for object in filteredObjects])
 
-fish[0].kumis = "kayu bakar"
-fish[1].kumis = "gas LPG"
-fish[2].kumis = "gas LPG"
-fish[3].kumis = "gas LPG"
-fish[4].kumis = "kompor listrik"
-fish[5].kumis = "gas LPG"
-fish[6].kumis = "gas LPG"
-fish[7].kumis = "kayu bakar"
-fish[8].kumis = "kayu bakar"
-fish[9].kumis = "gas LPG"
+        likely *= (1 / ((2 * math.pi * var) ** 0.5) * math.exp(-((values[i] - m) ** 2 / (2 * var))))
 
-fish[0].name = "sedang"
-fish[1].name = "sedang"
-fish[2].name = "sedang"
-fish[3].name = "kaya"
-fish[4].name = "kaya"
-fish[5].name = "kaya"
-fish[6].name = "miskin"
-fish[7].name = "miskin"
-fish[8].name = "miskin"
-fish[9].name = "miskin"
-
-fish[0].ukuran = 9
-fish[1].ukuran = 10
-fish[2].ukuran = 15
-fish[3].ukuran = 30
-fish[4].ukuran = 16
-fish[5].ukuran = 25
-fish[6].ukuran = 9
-fish[7].ukuran = 8
-fish[8].ukuran = 10
-fish[9].ukuran = 14
-
-fish[0].lantai = "ubin"
-fish[1].lantai = "ubin"
-fish[2].lantai = "plester"
-fish[3].lantai = "ubin"
-fish[4].lantai = "ubin"
-fish[5].lantai = "ubin"
-fish[6].lantai = "plester"
-fish[7].lantai = "tanah"
-fish[8].lantai = "tanah"
-fish[9].lantai = "tanah"
-
-fish[0].daging = 3
-fish[1].daging = 2
-fish[2].daging = 2
-fish[3].daging = 4
-fish[4].daging = 3
-fish[5].daging = 5
-fish[6].daging = 0.5
-fish[7].daging = 1
-fish[8].daging = 2
-fish[9].daging = 1
+    return likely
 
 
-# print(prior(fish,"sedang"))
-
-# print(posterior("kayu bakar","miskin", fish))
-# print(likelihood(fish,"miskin","plester"))
-
-# miskin
-
-miskinLuas = likelihoodNumerik(12,fish,"miskin","luas")
-sedangLuas = likelihoodNumerik(12,fish,"sedang","luas")
-kayaLuas = likelihoodNumerik(12,fish,"kaya","luas")
-
-miskinDaging = likelihoodNumerik(2,fish,"miskin","daging")
-sedangDaging = likelihoodNumerik(2,fish,"sedang","daging")
-kayaDaging = likelihoodNumerik(2,fish,"kaya","daging")
+def posterior(objects, selectedClass, discreteValues, numericValues):
+    return likelihood(objects, selectedClass, discreteValues) * numericLikelihood(objects, selectedClass, numericValues) * prior(objects, selectedClass)
 
 
+def decision(objects, discreterValues, numericValues):
+    classes = set([object.classification for object in objects])
+    classes = list(classes)
+    results = []
+    for className in classes:
+        results.append(posterior(objects, className, discreterValues, numericValues))
+    return classes[results.index(max(results))]
 
-# print(likelihoodNumerik(12, fish, "sedang"))
-#
-print(naiveBayes(fish,12,"kayu bakar","plester",2))
+
+data = []
+
+data.append(Data(["kayu bakar", "ubin"], [9, 3], "sedang"))
+data.append(Data(["gas LPG", "ubin"], [10, 2], "sedang"))
+data.append(Data(["gas LPG", "plester"], [15, 2], "sedang"))
+data.append(Data(["gas LPG", "ubin"], [30, 4], "kaya"))
+data.append(Data(["kompor listrik", "ubin"], [16, 3], "kaya"))
+data.append(Data(["gas LPG", "ubin"], [25, 5], "kaya"))
+data.append(Data(["gas LPG", "plester"], [9, 0.5], "miskin"))
+data.append(Data(["kayu bakar", "tanah"], [8, 1], "miskin"))
+data.append(Data(["kayu bakar", "tanah"], [10, 2], "miskin"))
+data.append(Data(["gas LPG", "tanah"], [14, 1], "miskin"))
+
+print(decision(data, ["kayu bakar", "plester"], [12, 2]))
